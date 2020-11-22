@@ -1,0 +1,18 @@
+version: 1
+formatters:
+  tbdf:
+    format: '%(asctime)s - %(filename)s - %(funcname)s - %(levelname)s :\n%(message)s'
+handlers:
+  console:
+    class: logging.StreamHandler
+    level: DEBUG
+    formatter: tbdf
+    stream: ext://sys.stdout
+loggers:
+  tbd:
+    level: DEBUG
+    handlers: [console]
+    propagate: no
+root:
+  level: DEBUG
+  handlers: [console]
