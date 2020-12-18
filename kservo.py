@@ -20,6 +20,7 @@
 # # exit
 # $ cat /sys/bus/usb-serial/drivers/ftdi_sio/new_id
 # $ dmesg
+# $ sudo sh -c 'echo "ftdi_sio" >> /etc/modules'
 
 
 from logging import getLogger, config
@@ -30,8 +31,8 @@ import sys
 from time import sleep
 
 
-##config.fileConfig("python_log_config.ini")
-##logger = getLogger("develop")
+config.fileConfig("python_log_config.ini")
+logger = getLogger("minimum")
 
 
 P7500 = [0x81, 0x3A, 0x4C]
@@ -42,12 +43,12 @@ P3968 = [0x81, 0x1F, 0x00]
 
 args = sys.argv
 
-
-temp = subprocess.Popen("ls -l /dev/ttyUSB0", stdout=subprocess.PIPE, shell=True).communicate()[0]
-print(temp)
-
-
-s = serial.Serial("/dev/ttyUSB0", 115200, bytesize=serial.EIGHTBITS, parity=serial.PARITY_EVEN, stopbits=serial.STOPBITS_ONE, timeout=1.0)
+try:
+	temp = subprocess.Popen("ls -l /dev/ttyUSB0", stdout=subprocess.PIPE, shell=True).communicate()[0]
+	s = serial.Serial("/dev/ttyUSB0", 115200, bytesize=serial.EIGHTBITS, parity=serial.PARITY_EVEN, stopbits=serial.STOPBITS_ONE, timeout=1.0)
+except Exception as errmsg:
+	logger.error("%s", errmsg)
+	exit(1)
 
 
 s.flushOutput()
@@ -56,9 +57,11 @@ for i in P7500:
 	s.write(buff)
 
 s.flushInput()
-msg = s.read(2048)
-#print(msg.decode("utf-8"))
-
+msg = s.read(256)
+print(type(msg))
+logger.warning("%s", bytearray(msg).hex().upper())
+logger.warning("%s", list(msg))
+logger.warning("%s", msg)
 sleep(1)
 
 s.flushOutput()

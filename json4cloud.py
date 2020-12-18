@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 
 ##
- #  2020.11.22
- #  json4azure.py
+ #  2020.12.12
+ #  json4cloud.py
  #  ver 1.0
  #  Kunihito Mitsuboshi
  #  license(Apache-2.0) at http://www.apache.org/licenses/LICENSE-2.0
@@ -48,17 +48,17 @@ os.mkdir(dir_name)
 count = 0
 
 for file_name in args[2:]:
-	azure_file_name = file_name.split("/")[-1]
-	azure_file_name = azure_file_name[:-5] + "_azure.json"
+	cloud_file_name = file_name.split("/")[-1]
+	cloud_file_name = cloud_file_name[:-5] + "_cloud.json"
 
-	print(file_name + "   ->   " + dir_name + azure_file_name)
+	print(file_name + "   ->   " + dir_name + cloud_file_name)
 
 	try:
 		jf = open(file_name, "r")
 		data = jf.read()
 		jf.close()
 
-		ajf = open(dir_name + azure_file_name, "w")
+		ajf = open(dir_name + cloud_file_name, "w")
 		ajf.write(head + data + tail)
 		ajf.close()
 
@@ -69,4 +69,4 @@ for file_name in args[2:]:
 	count += 1
 
 print("%d files changed.", count)
-print("Prease type command  : $ zip -v " + dir_name[:-1] + ".zip " + dir_name + "*_azure.json")
+print("Prease type command  : $ zip -v " + dir_name[:-1] + ".zip " + dir_name + "*_cloud.json")
