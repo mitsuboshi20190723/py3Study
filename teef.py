@@ -2,13 +2,17 @@
 # -*- coding: utf-8 -*-
 
 ##
- #  2023.6.9
+ #  2023.6.10
  #  teef.py
- #  ver 1.0
+ #  ver 1.2
  #  Kunihito Mitsuboshi
  #  license(Apache-2.0) at http://www.apache.org/licenses/LICENSE-2.0
  ##
 
+# teef.py 2> teef.kekka # stderr2file
+
+
+import traceback
 
 def divide_zero(a):
 	a = a / 0
@@ -54,6 +58,8 @@ if __name__ == "__main__":
 
 	except:
 		print("In main : divide error")
+#		print(traceback.format_exc())   # output stdout
+		print(traceback.print_exc())    # output stderr
 
 	else:
 		print(type(a), a)
