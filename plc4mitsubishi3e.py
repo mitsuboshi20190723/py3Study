@@ -5,7 +5,7 @@
 ##
  #  2023.6.24
  #  plc4mitsubishi3e.py
- #  ver 1.4
+ #  ver.1.4.2
  #  Kunihito Mitsuboshi
  #  license(Apache-2.0) at http://www.apache.org/licenses/LICENSE-2.0
  ##
@@ -40,25 +40,11 @@ SBD = {"B*": 0xA0, "M*": 0x90, "SM": 0x91} # support_bit_devices
 
 
 def N():
-	return np.array([], dtype=msg8)
+	return np.array([], dtype=MSG8)
 
 
 def M(L):
-	return np.array([L], dtype=msg8)
-
-
-def format_msg(integer, n):
-	msg = np.zeros(n, dtype=msg8)
-
-	for i in range(n):
-		integer, remainder = divmod(integer, 0x100)
-		msg[i] = remainder
-		if integer == 0: break
-#		print(integer, remainder)
-	if integer > 0:
-		print("WERNING")
-
-	return msg
+	return np.array([L], dtype=MSG8)
 
 
 
@@ -81,9 +67,9 @@ class Device:
 
 	def set_dev(self, addr, code, size=N(), data=N()):
 		flag = 0
-		self.addr = addr.astype(msg8)
+		self.addr = addr
 		if len(self.addr) != 3: flag = 1
-		self.code = code.astype(msg8)
+		self.code = code
 		if len(self.code) != 1: flag = 1
 		self.size = size
 		self.data = data
@@ -100,17 +86,17 @@ class Mitsubishi3E:
 	BUFF_SIZE = 4096
 
 	def __init__(self):
-		self.sub_h      = np.zeros(2, dtype=msg8)
-		self.net_num    = np.zeros(1, dtype=msg8)
-		self.pc_num     = np.zeros(1, dtype=msg8)
-		self.unit_io    = np.zeros(2, dtype=msg8)
-		self.unit_ch    = np.zeros(1, dtype=msg8)
+		self.sub_h      = np.zeros(2, dtype=MSG8)
+		self.net_num    = np.zeros(1, dtype=MSG8)
+		self.pc_num     = np.zeros(1, dtype=MSG8)
+		self.unit_io    = np.zeros(2, dtype=MSG8)
+		self.unit_ch    = np.zeros(1, dtype=MSG8)
 
-		self.nlen       = np.zeros(2, dtype=msg8)
+		self.nlen       = np.zeros(2, dtype=MSG8)
 
-		self.cputimer   = np.zeros(2, dtype=msg8)
-		self.command    = np.zeros(2, dtype=msg8)
-		self.subcommand = np.zeros(2, dtype=msg8)
+		self.cputimer   = np.zeros(2, dtype=MSG8)
+		self.command    = np.zeros(2, dtype=MSG8)
+		self.subcommand = np.zeros(2, dtype=MSG8)
 
 		self.devices    = N()
 
@@ -147,7 +133,7 @@ class Mitsubishi3E:
 		self.unit_ch = unit_ch
 
 
-	def set_cputimer(self, cputimer=format_msg(4, 2)):
+	def set_cputimer(self, cputimer=M([0x04,0x00])):
 		self.cputimer = cputimer # 1.0 sec
 
 
@@ -166,13 +152,28 @@ class Mitsubishi3E:
 			exit(1)
 
 
-	def close(self): # disconnect PLC
+	def disconnect(self):
 		self.s.close()
 
 
-	def connect2(self, sub_h, net_num, pc_num, unit_io, unit_ch, addr, port):
-		set_plc(self, sub_h, net_num, pc_num, unit_io, unit_ch)
-		connect(self, addr, port)
+	def custom_connect(self, addr, port, sec, sub_h, net_num, pc_num, unit_io, unit_ch, cputimer):
+		self.set_plc(sub_h, net_num, pc_num, unit_io, unit_ch)
+		self.set_cputimer(cputimer)
+		self.connect(addr, port, sec)
+
+
+	def format_msg(self, integer, msglen):
+		msg = np.zeros(msglen, dtype=MSG8)
+
+		for i in range(msglen):
+			integer, remainder = divmod(integer, 0x100)
+			msg[i] = remainder
+			if integer == 0: break
+#			print(integer, remainder)
+		if integer > 0:
+			print("WERNING")
+
+		return msg
 
 
 	def get_system_clock(self): ##############################
@@ -252,7 +253,7 @@ class Mitsubishi3E:
 	def read_batch(self, dev, bwd=1):
 		self.set_command(np.array([0x01,0x04]), np.array([0x00,0x00]) if bwd != 0 else np.array([0x01,0x00]))
 		self.devices = dev.join_msg()
-		self.nlen = format_msg(6+len(self.devices), 2) # 6 = 2 + 2 + 2
+		self.nlen = self.format_msg(6+len(self.devices), 2) # 6 = 2 + 2 + 2
 		return self.snr(self.join_msg())
 
 
@@ -264,20 +265,20 @@ class Mitsubishi3E:
 			self.devices = np.array([0x00,0x01])
 
 		self.devices += dev.join_msg()
-		self.nlen = format_msg(6+len(self.devices), 2) # 6 = 2 + 2 + 2
+		self.nlen = self.format_msg(6+len(self.devices), 2) # 6 = 2 + 2 + 2
 		return self.snr(self.join_msg())
 
 
 	def read_block(self, wdev, bdev):
 		self.set_command(np.array([0x06,0x04]), np.array([0x00,0x00]))
-		self.devices = format_msg(len(wdev), 1)
-		self.devices = np.append(self.devices, format_msg(len(bdev), 1))
+		self.devices = self.format_msg(len(wdev), 1)
+		self.devices = np.append(self.devices, self.format_msg(len(bdev), 1))
 		for i in range(len(wdev)):
 			self.devices = np.append(self.devices, wdev[i].join_msg())
 		for i in range(len(bdev)):
 			self.devices = np.append(self.devices, bdev[i].join_msg())
 
-		self.nlen = format_msg(6+len(self.devices), 2) # 6 = 2 + 2 + 2
+		self.nlen = self.format_msg(6+len(self.devices), 2) # 6 = 2 + 2 + 2
 		return self.snr(self.join_msg())
 
 
@@ -288,7 +289,7 @@ class Mitsubishi3E:
 	def write_batch(self, dev, bwd=1):
 		self.set_command(np.array([0x01,0x14]), np.array([0x00,0x00]) if bwd != 0 else np.array([0x01,0x00]))
 		self.devices = dev.join_msg()
-		self.nlen = format_msg(6+len(self.devices), 2) # 6 = 2 + 2 + 2
+		self.nlen = self.format_msg(6+len(self.devices), 2) # 6 = 2 + 2 + 2
 		return self.snr(self.join_msg(), -1)
 
 
@@ -303,20 +304,20 @@ class Mitsubishi3E:
 		elif bwd == 2:
 			self.devices = np.array([0x00,0x01])
 			self.devices = np.append(self.devices, dev.join_msg())
-		self.nlen = format_msg(6+len(self.devices), 2) # 6 = 2 + 2 + 2
+		self.nlen = self.format_msg(6+len(self.devices), 2) # 6 = 2 + 2 + 2
 		return self.snr(self.join_msg(), -1)
 		
 
 	def write_block(self, wdev, bdev):
 		self.set_command(np.array([0x06,0x14]), np.array([0x00,0x00]))
-		self.devices = format_msg(len(wdev), 1)
-		self.devices = np.append(self.devices, format_msg(len(bdev), 1))
+		self.devices = self.format_msg(len(wdev), 1)
+		self.devices = np.append(self.devices, self.format_msg(len(bdev), 1))
 		for i in range(len(wdev)):
 			self.devices = np.append(self.devices, wdev[i].join_msg())
 		for i in range(len(bdev)):
 			self.devices = np.append(self.devices, bdev[i].join_msg())		
 
-		self.nlen = format_msg(6+len(self.devices), 2) # 6 = 2 + 2 + 2
+		self.nlen = self.format_msg(6+len(self.devices), 2) # 6 = 2 + 2 + 2
 		return self.snr(self.join_msg(), -1)
 
 
@@ -337,9 +338,15 @@ class Mitsubishi3E:
 		elif str == "RESET":
 			self.set_command(np.array([0x06,0x10]), np.array([0x00,0x00]))
 			self.devices = np.array([0x00,0x00])
+		elif str == "CPU":
+			self.set_command(np.array([0x01,0x01]), np.array([0x00,0x00]))
+			self.devices = np.array([0x00,0x00])
+		elif str == "INITERR":
+			self.set_command(np.array([0x17,0x16]), np.array([0x00,0x00]))
+			self.devices = np.array([0x00,0x00])
 		elif str == "TEST":
 			self.set_command(np.array([0x19,0x06]), np.array([0x00,0x00]))
-			self.devices = np.array([], dtype=msg16)################ response ari
+			self.devices = np.array([], dtype=MSG8)
 		else:
 			return "Cannot find " + str
 
@@ -363,7 +370,7 @@ class Mitsubishi3E:
 
 			sleep(t)
 
-			response = np.frombuffer(self.s.recv(Mitsubishi3E.BUFF_SIZE), dtype=msg8)
+			response = np.frombuffer(self.s.recv(Mitsubishi3E.BUFF_SIZE), dtype=MSG8)
 			# response = self.s.recv(Mitsubishi3E.BUFF_SIZE).decode("utf-8")
 
 #			full_msg = b''
@@ -397,6 +404,7 @@ def set16(d, n=0):
 def reset16(d, n=0):
 	d = d & ~(1 << 15-n%16) # ~(-d -1 | 1 << 15-n%16)
 	return d
+
 
 
 def m2b(m, offset=0): # msg16 -> int64
@@ -435,7 +443,7 @@ def i2m(d, sgn="-"): # int -> msg16
 	if sgn != "u" and sgn != "U":
 		d += 65536 * (d<0)
 	q, mod = divmod(d, 256)
-	return np.array([mod, q], dtype=msg8)
+	return np.array([mod, q], dtype=MSG8)
 
 
 def d2m(d, sgn="-"): # int -> msg32
@@ -444,7 +452,7 @@ def d2m(d, sgn="-"): # int -> msg32
 	q, mod = divmod(d, 65536)
 	q1, mod1 = divmod(mod, 256)
 	q2, mod2 = divmod(q, 256)
-	return np.array([mod1, q1, mod2, q2], dtype=msg8)
+	return np.array([mod1, q1, mod2, q2], dtype=MSG8)
 
 
 def f2m(r): # float -> msg32
@@ -452,7 +460,7 @@ def f2m(r): # float -> msg32
 	q, mod = divmod(f, 65536)
 	q1, mod1 = divmod(mod, 256)
 	q2, mod2 = divmod(q, 256)
-	return np.array([mod1, q1, mod2, q2], dtype=msg8)
+	return np.array([mod1, q1, mod2, q2], dtype=MSG8)
 
 
 
@@ -460,16 +468,16 @@ def print_message(res):
 	p = MSG_HEAD
 	
 	str = res.hex().upper()
-	if len(str) > p-1 :
+	if len(str) > p-1:
 		print(str[:p-4])
 		print(str[p-4:p-2], end=" : ")
 		print("message len " + len(str[p-2:]))
 		print(str[p-2:p])
 
-		if len(str) > p :
+		if len(str) > p:
 			d = str[p:]
 			print("data")
-			while len(d) > 32
+			while len(d) > 32:
 				print(d[:32])
 				d = d[32:]
 			print(d)
