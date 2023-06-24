@@ -5,7 +5,7 @@
 ##
  #  2023.6.24
  #  plc4mitsubishi3e.py
- #  ver.1.4.2
+ #  ver.1.4.4
  #  Kunihito Mitsuboshi
  #  license(Apache-2.0) at http://www.apache.org/licenses/LICENSE-2.0
  ##
@@ -468,15 +468,16 @@ def print_message(res):
 	p = MSG_HEAD
 	
 	str = res.hex().upper()
-	if len(str) > p-1:
-		print(str[:p-4])
-		print(str[p-4:p-2], end=" : ")
-		print("message len " + len(str[p-2:]))
-		print(str[p-2:p])
+	if len(str) > (p-1)*2:
+		print(str[:(p-4)*2])
+		print(str[(p-4)*2:(p-2)*2], end=" (")
+		print("message length ", end="")
+		print(len(str[(p-2)*2:])/2, end=" byte)\n")
+		print(str[(p-2)*2:p*2])
 
-		if len(str) > p:
-			d = str[p:]
-			print("data")
+		if len(str) > p*2:
+			d = str[p*2:]
+			print("data : ")
 			while len(d) > 32:
 				print(d[:32])
 				d = d[32:]
