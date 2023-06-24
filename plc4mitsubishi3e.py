@@ -3,9 +3,9 @@
 
 
 ##
- #  2021.2.18
+ #  2023.6.24
  #  plc4mitsubishi3e.py
- #  ver 1.2
+ #  ver 1.4
  #  Kunihito Mitsuboshi
  #  license(Apache-2.0) at http://www.apache.org/licenses/LICENSE-2.0
  ##
@@ -18,22 +18,25 @@ from time import sleep
 import numpy as np
 import datetime
 import struct
-#import binascii
+
+
 
 config.fileConfig("python_log_config.ini")
 logger = getLogger("develop")
 
-request_head = 11
-response_head = 11
-
-
-msg8 = np.uint8
+# numpy custom
+MSG8 = np.uint8
 np.set_printoptions(formatter = {"int": "{:02X}".format})
 
 
+
+MSG_HEAD = 11
+
+
 # support devices
-swd = {"W*": 0xB4, "SD": 0xA9} # support_word_devices
-sbd = {"B*": 0xA0, "SM": 0x91} # support_bit_devices
+SWD = {"W*": 0xB4, "D*": 0xA8, "SD": 0xA9} # support_word_devices
+SBD = {"B*": 0xA0, "M*": 0x90, "SM": 0x91} # support_bit_devices
+
 
 
 def N():
@@ -56,27 +59,6 @@ def format_msg(integer, n):
 		print("WERNING")
 
 	return msg
-
-
-def a2b(str): # ascii to binary8
-	msg = N()
-
-	for i in range(len(str)//2):
-		if str[:2].isnumeric():
-			msg = np.append(msg, int(str[:2], 16))
-		elif str[:2] in swd:
-			d = swd.get(str[:2])
-			msg = np.append(msg, d)
-		elif str[:2] in sbd:
-			d = sbd.get(str[:2])
-			msg = np.append(msg, d)
-		else:
-			return N()
-
-		str = str[2:]
-
-	return msg
-
 
 
 
@@ -156,7 +138,7 @@ class Mitsubishi3E:
 		return msg
 
 
-	# def set_plc(self, sub_h=a2b("5000"), net_num=a2b("00"), pc_num=a2b("FF"), unit_io=a2b("03FF"), unit_ch=a2b("00")): ########## "FF03"
+	# def set_plc(self, sub_h=a2b("5000"), net_num=a2b("00"), pc_num=a2b("FF"), unit_io=a2b("03FF"), unit_ch=a2b("00")): #### "FF03"
 	def set_plc(self, sub_h=M([0x50,0x00]), net_num=M([0x00]), pc_num=M([0xFF]), unit_io=M([0xFF, 0x03]), unit_ch=M([0x00])):
 		self.sub_h   = sub_h
 		self.net_num = net_num
@@ -402,12 +384,15 @@ class Mitsubishi3E:
 			return N()
 		return response
 
+
+
 # >f big endian
 # <f little endian
 
 def set16(d, n=0):
 	d = d | 1 << 15-n%16
 	return d
+
 
 def reset16(d, n=0):
 	d = d & ~(1 << 15-n%16) # ~(-d -1 | 1 << 15-n%16)
@@ -417,13 +402,9 @@ def reset16(d, n=0):
 def m2b(m, offset=0): # msg16 -> int64
 	m16 = m[(offset//16)*2+1] * 256 + m[(offset//16)*2]
 	b = np.array(m16, dtype=np.uint16)
-#	print("In m2b:ofset=" + str(offset) +", data="+ str(b))
 	b = b >> offset%16 & 0b1
 	return int(str(b))
 
-def m2c(s, offset=0): # msg16 -> int64 ####################################
-	s4 = s[offset:offset+1]
-	return int(s4)
 
 def m2i(m, sgn="-", offset=0): # msg16 -> int64
 	m16 = m[offset*2+1] * 256 + m[offset*2]
@@ -447,17 +428,15 @@ def m2f(m, offset=0): # msg32 -> float64
 	m32 = m[offset*2+3] * 16777216 + m[offset*2+2] * 65536 + m[offset*2+1] * 256 + m[offset*2]
 	f = np.array(m32, dtype=np.uint32)
 	return struct.unpack('<f', f)[0]
-	
-#	s32 = s[offset*4+4:offset*4+8] + s[offset*4:offset*4+4]
-#	return struct.unpack('>f', binascii.unhexlify(s32))[0]
 
 
 
-def i2m(d, sgn="-"): # int -> msg8
+def i2m(d, sgn="-"): # int -> msg16
 	if sgn != "u" and sgn != "U":
 		d += 65536 * (d<0)
 	q, mod = divmod(d, 256)
 	return np.array([mod, q], dtype=msg8)
+
 
 def d2m(d, sgn="-"): # int -> msg32
 	if sgn != "u" and sgn != "U":
@@ -467,6 +446,7 @@ def d2m(d, sgn="-"): # int -> msg32
 	q2, mod2 = divmod(q, 256)
 	return np.array([mod1, q1, mod2, q2], dtype=msg8)
 
+
 def f2m(r): # float -> msg32
 	f = struct.unpack('>I', struct.pack('>f', r))[0]
 	q, mod = divmod(f, 65536)
@@ -474,30 +454,28 @@ def f2m(r): # float -> msg32
 	q2, mod2 = divmod(q, 256)
 	return np.array([mod1, q1, mod2, q2], dtype=msg8)
 
-#	s = hex(struct.unpack('>I', struct.pack('>f', r))[0]).upper()
-#	return  s[6:10] + s[2:6]
 
 
-def choice_from_response(req, res, dev):
-	pass
+def print_message(res):
+	p = MSG_HEAD
+	
+	str = res.hex().upper()
+	if len(str) > p-1 :
+		print(str[:p-4])
+		print(str[p-4:p-2], end=" : ")
+		print("message len " + len(str[p-2:]))
+		print(str[p-2:p])
 
-def split_response(res):
-	p = response_head
-	str =  res[:p-4]
-	str += " " + res[p-4:p] + "\n" # error code
-	while p + 4 < len(res):
-		str += res[p:p+4] + " "
-		p += 4
-	return str + res[p:]
+		if len(str) > p :
+			d = str[p:]
+			print("data")
+			while len(d) > 32
+				print(d[:32])
+				d = d[32:]
+			print(d)
 
 
-def print_response(res):
-	p = response_head
-	print(res[:p-2])
-	print(res[p-2:p])
-	print(res[p:])
-#	d = res[p:]
-#	print(d.reshape(len(d)/2,2))
+
 
 
 if __name__ == "__main__":
