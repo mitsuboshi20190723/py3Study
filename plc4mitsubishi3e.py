@@ -3,9 +3,9 @@
 
 
 ##
- #  2023.6.24
+ #  2023.6.25
  #  plc4mitsubishi3e.py
- #  ver.1.4.4
+ #  ver.1.4.5
  #  Kunihito Mitsuboshi
  #  license(Apache-2.0) at http://www.apache.org/licenses/LICENSE-2.0
  ##
@@ -125,7 +125,7 @@ class Mitsubishi3E:
 
 
 	# def set_plc(self, sub_h=a2b("5000"), net_num=a2b("00"), pc_num=a2b("FF"), unit_io=a2b("03FF"), unit_ch=a2b("00")): #### "FF03"
-	def set_plc(self, sub_h=M([0x50,0x00]), net_num=M([0x00]), pc_num=M([0xFF]), unit_io=M([0xFF, 0x03]), unit_ch=M([0x00])):
+	def set_plc(self, sub_h=M([0x50, 0x00]), net_num=M([0x00]), pc_num=M([0xFF]), unit_io=M([0xFF, 0x03]), unit_ch=M([0x00])):
 		self.sub_h   = sub_h
 		self.net_num = net_num
 		self.pc_num  = pc_num
@@ -133,7 +133,7 @@ class Mitsubishi3E:
 		self.unit_ch = unit_ch
 
 
-	def set_cputimer(self, cputimer=M([0x04,0x00])):
+	def set_cputimer(self, cputimer=M([0x04, 0x00])):
 		self.cputimer = cputimer # 1.0 sec
 
 
@@ -251,18 +251,18 @@ class Mitsubishi3E:
 
 
 	def read_batch(self, dev, bwd=1):
-		self.set_command(np.array([0x01,0x04]), np.array([0x00,0x00]) if bwd != 0 else np.array([0x01,0x00]))
+		self.set_command(np.array([0x01, 0x04]), np.array([0x00, 0x00]) if bwd != 0 else np.array([0x01, 0x00]))
 		self.devices = dev.join_msg()
 		self.nlen = self.format_msg(6+len(self.devices), 2) # 6 = 2 + 2 + 2
 		return self.snr(self.join_msg())
 
 
 	def read_random(self, dev, bwd=1): # n=1
-		self.set_command(np.array([0x03,0x04]), np.array([0x00,0x00]))
+		self.set_command(np.array([0x03, 0x04]), np.array([0x00, 0x00]))
 		if bwd < 2:
-			self.devices = np.array([0x01,0x00])
+			self.devices = np.array([0x01, 0x00])
 		else:
-			self.devices = np.array([0x00,0x01])
+			self.devices = np.array([0x00, 0x01])
 
 		self.devices += dev.join_msg()
 		self.nlen = self.format_msg(6+len(self.devices), 2) # 6 = 2 + 2 + 2
@@ -270,7 +270,7 @@ class Mitsubishi3E:
 
 
 	def read_block(self, wdev, bdev):
-		self.set_command(np.array([0x06,0x04]), np.array([0x00,0x00]))
+		self.set_command(np.array([0x06, 0x04]), np.array([0x00, 0x00]))
 		self.devices = self.format_msg(len(wdev), 1)
 		self.devices = np.append(self.devices, self.format_msg(len(bdev), 1))
 		for i in range(len(wdev)):
@@ -287,29 +287,29 @@ class Mitsubishi3E:
 
 
 	def write_batch(self, dev, bwd=1):
-		self.set_command(np.array([0x01,0x14]), np.array([0x00,0x00]) if bwd != 0 else np.array([0x01,0x00]))
+		self.set_command(np.array([0x01, 0x14]), np.array([0x00, 0x00]) if bwd != 0 else np.array([0x01, 0x00]))
 		self.devices = dev.join_msg()
 		self.nlen = self.format_msg(6+len(self.devices), 2) # 6 = 2 + 2 + 2
 		return self.snr(self.join_msg(), -1)
 
 
 	def write_random(self, dev, bwd=1): # n=1
-		self.set_command(np.array([0x02,0x14]), np.array([0x00,0x00]) if bwd != 0 else np.array([0x01,0x00]))
+		self.set_command(np.array([0x02, 0x14]), np.array([0x00, 0x00]) if bwd != 0 else np.array([0x01, 0x00]))
 		if   bwd == 0:
 			self.devices = np.array([0x01])
 			self.devices = np.append(self.devices, dev.join_msg())
 		elif bwd == 1:
-			self.devices = np.array([0x01,0x00])
+			self.devices = np.array([0x01, 0x00])
 			self.devices = np.append(self.devices, dev.join_msg())
 		elif bwd == 2:
-			self.devices = np.array([0x00,0x01])
+			self.devices = np.array([0x00, 0x01])
 			self.devices = np.append(self.devices, dev.join_msg())
 		self.nlen = self.format_msg(6+len(self.devices), 2) # 6 = 2 + 2 + 2
 		return self.snr(self.join_msg(), -1)
 		
 
 	def write_block(self, wdev, bdev):
-		self.set_command(np.array([0x06,0x14]), np.array([0x00,0x00]))
+		self.set_command(np.array([0x06, 0x14]), np.array([0x00, 0x00]))
 		self.devices = self.format_msg(len(wdev), 1)
 		self.devices = np.append(self.devices, self.format_msg(len(bdev), 1))
 		for i in range(len(wdev)):
@@ -324,33 +324,33 @@ class Mitsubishi3E:
 	def remote(self, str):
 		
 		if   str == "RUN":
-			self.set_command(np.array([0x01,0x10]), np.array([0x00,0x00]))
-			self.devices = np.array([0x01,0x00,0x00,0x00]) # soft run only
+			self.set_command(np.array([0x01, 0x10]), np.array([0x00, 0x00]))
+			self.devices = np.array([0x01, 0x00, 0x00, 0x00]) # soft run only
 		elif str == "STOP":
-			self.set_command(np.array([0x02,0x10]), np.array([0x00,0x00]))
-			self.devices = np.array([0x00,0x00])
+			self.set_command(np.array([0x02, 0x10]), np.array([0x00, 0x00]))
+			self.devices = np.array([0x00, 0x00])
 		elif str == "PAUSE":
-			self.set_command(np.array([0x03,0x10]), np.array([0x00,0x00]))
-			self.devices = np.array([0x01,0x00]) # soft pause only
+			self.set_command(np.array([0x03, 0x10]), np.array([0x00, 0x00]))
+			self.devices = np.array([0x01, 0x00]) # soft pause only
 		elif str == "LC":
-			self.set_command(np.array([0x05,0x10]), np.array([0x00,0x00]))
-			self.devices = np.array([0x00,0x00])
+			self.set_command(np.array([0x05, 0x10]), np.array([0x00, 0x00]))
+			self.devices = np.array([0x00, 0x00])
 		elif str == "RESET":
-			self.set_command(np.array([0x06,0x10]), np.array([0x00,0x00]))
-			self.devices = np.array([0x00,0x00])
+			self.set_command(np.array([0x06, 0x10]), np.array([0x00, 0x00]))
+			self.devices = np.array([0x00, 0x00])
 		elif str == "CPU":
-			self.set_command(np.array([0x01,0x01]), np.array([0x00,0x00]))
-			self.devices = np.array([0x00,0x00])
+			self.set_command(np.array([0x01, 0x01]), np.array([0x00, 0x00]))
+			self.devices = np.array([0x00, 0x00])
 		elif str == "INITERR":
-			self.set_command(np.array([0x17,0x16]), np.array([0x00,0x00]))
-			self.devices = np.array([0x00,0x00])
+			self.set_command(np.array([0x17, 0x16]), np.array([0x00, 0x00]))
+			self.devices = np.array([0x00, 0x00])
 		elif str == "TEST":
-			self.set_command(np.array([0x19,0x06]), np.array([0x00,0x00]))
+			self.set_command(np.array([0x19, 0x06]), np.array([0x00, 0x00]))
 			self.devices = np.array([], dtype=MSG8)
 		else:
 			return "Cannot find " + str
 
-		self.nlen = format_msg(6+len(self.devices), 2) # 6 = 2 + 2 + 2
+		self.nlen = self.format_msg(6+len(self.devices), 2) # 6 = 2 + 2 + 2
 		return self.snr(self.join_msg(), -1)
 
 
@@ -361,8 +361,8 @@ class Mitsubishi3E:
 	def snr(self, request, t=0.25):
 		try:
 			# logger.info(request)
-			# logger.info(request.astype(np.uint8).tobytes().hex())
-			self.s.send(request.astype(np.uint8).tobytes())
+			# logger.info(request.astype(MSG8).tobytes().hex())
+			self.s.send(request.astype(MSG8).tobytes())
 			# self.s.send(request.encode("utf-8"))
 
 			if t < 0:
@@ -379,7 +379,7 @@ class Mitsubishi3E:
 #				if len(msg) <= 0:
 #					break
 #				full_msg += msg
-#			response = np.frombuffer(full_msg, dtype=msg8)
+#			response = np.frombuffer(full_msg, dtype=MSG8)
 #			logger.info(full_msg.hex())
 
 		except OSError as errmsg:
