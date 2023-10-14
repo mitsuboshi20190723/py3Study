@@ -3,9 +3,9 @@
 
 
 ##
- #  2023.6.25
+ #  2023.10.15
  #  plc4mitsubishi3e.py
- #  ver.1.4.5
+ #  ver.1.5
  #  Kunihito Mitsuboshi
  #  license(Apache-2.0) at http://www.apache.org/licenses/LICENSE-2.0
  ##
@@ -49,11 +49,11 @@ def M(L):
 
 
 class Device:
-	def __init__(self, addr=N(), code=N(), size=N(), data=N()):
-		self.addr = addr
-		self.code = code
-		self.size = size
-		self.data = data
+	def __init__(self):
+		self.addr = np.zeros(3, dtype=MSG8)
+		self.code = np.zeros(1, dtype=MSG8)
+		self.size = np.zeros(2, dtype=MSG8)
+		self.data = N()
 
 
 	def join_msg(self):
@@ -79,6 +79,35 @@ class Device:
 		else:
 			return self.join_msg()
 
+
+	def make_dev(self, addr, code, size, data=N()):
+		q, mod = divmod(addr, 65536)
+		q1, mod1 = divmod(mod, 256)
+		q2, mod2 = divmod(q, 256)
+		if q2 > 0:
+			print("Address is too large.")
+		self.addr = np.array([mod1, q1, mod2], dtype=MSG8)
+
+		if SWD.get(code, "NS") != "NS":
+			self.code = SWD[code] 
+		elif SBD.get(code, "NS") != "NS":
+			self.code = SBD[code]
+		else:
+			self.code = 0
+			print("Don't support device")
+
+		if size == 0:
+			q, mod = divmod(len(data), 256)
+			if q > 255:
+				print("Size is too large.")
+				q %= 256
+			self.size = np.array([mod, q], dtype=MSG8)
+		else:
+			if len(data) == 0:
+				q, mod = divmod(size, 256)
+				self.size = np.array([mod, q], dtype=MSG8)
+
+		return self.data
 
 
 class Mitsubishi3E:
@@ -360,10 +389,10 @@ class Mitsubishi3E:
 
 	def snr(self, request, t=0.25):
 		try:
-			# logger.info(request)
 			# logger.info(request.astype(MSG8).tobytes().hex())
+
 			self.s.send(request.astype(MSG8).tobytes())
-			# self.s.send(request.encode("utf-8"))
+			# self.s.send(request.encode("utf-8")) # for ascii
 
 			if t < 0:
 				return "SENDED"
@@ -371,7 +400,9 @@ class Mitsubishi3E:
 			sleep(t)
 
 			response = np.frombuffer(self.s.recv(Mitsubishi3E.BUFF_SIZE), dtype=MSG8)
-			# response = self.s.recv(Mitsubishi3E.BUFF_SIZE).decode("utf-8")
+			# response = self.s.recv(Mitsubishi3E.BUFF_SIZE).decode("utf-8") # for ascii
+
+			# logger.info(response.astype(MSG8).tobytes().hex())
 
 #			full_msg = b''
 #			while True:
