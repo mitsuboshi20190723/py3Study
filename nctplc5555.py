@@ -3,7 +3,7 @@
 
 
 ##
- #  2023.10.14
+ #  2023.10.15
  #  nctplc5555.py
  #  ver.1.0
  #  Kunihito Mitsuboshi
@@ -18,12 +18,6 @@
 import sys
 import socket
 
-
-
-res = b'\xD0\x00\x00\xFF\xFF\x03\x00\x8A\x00\x00\x00\x16\x00\x01\x00\x02\x00\x03\x00\x04\x00\x05\x00\x06\x00\x07\x00\x08\x00\x09\x00\x0A\x00\x0B\x00\x0C\x00\x0D\x00\x0E\x00\x0F\x00\x10\x00\x11\x00\x12\x00\x13\x00\x14\x00\x15\x00\x16\xAA\x17\xAA\x18\xAA\x19\xAA\x1A\xAA\x1B\xAA\x1C\xAA\x1D\xAA\x1E\xAA\x1F\xAA\x16\x00\x01\x00\x02\x00\x03\x00\x04\x00\x05\x00\x06\x00\x07\x00\x08\x00\x09\x00\x0A\x00\x0B\x00\x0C\x00\x0D\x00\x0E\x00\x0F\x00\x10\x00\x11\x00\x12\x00\x13\x00\x14\x00\x15\x00\xE7\x07\x0A\x00\x0F\x00\x0C\x00\x22\x00\x38\x00\x1C\xAA\x1D\xAA\x1E\xAA\x1F\xAA\xFF\xFF\x00\x00\xFF\xFF\x00\x00'
-
-
- 
 file = sys.argv
 
 if len(file) == 1:
@@ -34,8 +28,11 @@ else:
 	str = f.read()
 	f.close()
 
+
+res = bytes.fromhex(str)
+
 print("RESPONSE DATA : " + str)
-print("RESPONSE DATA : " + res.hex())
+print("RESPONSE DATA : " + res.hex().upper())
 
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
 	s.bind(("127.0.0.1", 5555))
@@ -50,9 +47,9 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
 				if not msg:
 					break
 				print("REQUEST DATA : " + msg.hex().upper())
-				cs.send(res)
+				cs.send(res)                                       # for binary
 #				print("REQUEST DATA : " + msg.encode("utf-8"))
-#				cs.send(str.encode("utf-8"))
+#				cs.send(str.encode("utf-8"))                       # for ascii
 
 
 #s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
