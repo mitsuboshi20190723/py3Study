@@ -11,8 +11,8 @@
  ##
 
 
-# echo
-# -b bynary -a ascii
+# -e echo
+# -b binary -a ascii
 
 
 import sys
