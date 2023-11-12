@@ -31,10 +31,9 @@ import sys
 from time import sleep
 
 
-GET_ID = [0xFF, 0x00, 0x00, 0x00] # get ID -> 0-31
-SET_ID_ZERO = [0xE0, 0x01, 0x01, 0x01]
-SET_ID = [0xEF, 0x01, 0x01, 0x01] # set ID=15(239%32)
-P7500 = [0x83, 0x3A, 0x4C] # move ID=3 P=7500(58*128+76)
+GETID = [0xFF, 0x00, 0x00, 0x00] # get ID -> 0-31
+SETID = [0xE0, 0x01, 0x01, 0x01] # set ID=0(224%32)
+P7500 = [0x80, 0x3A, 0x4C] # move ID=0 P=7500(58*128+76)
 P3968 = [0x83, 0x1F, 0x00]
 
 
@@ -53,7 +52,7 @@ except Exception as errmsg:
 # print(list(GET_ID))
 
 s.flushOutput()
-print(bytearray(P7500).hex().upper())
+print("TX : " + bytearray(P7500).hex().upper())
 
 for i in P7500:
 	request = struct.pack("B", i)
@@ -61,7 +60,7 @@ for i in P7500:
 
 s.flushInput()
 response = s.read(256)
-print(bytearray(response).hex().upper())
+print("RX : " + bytearray(response).hex().upper())
 
 
 sleep(1)
