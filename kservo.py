@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 
 ##
- #  2023.11.12
+ #  2023.11.14
  #  kservo.py
- #  ver.2.0
+ #  ver.2.2
  #  Kunihito Mitsuboshi
  #  license(Apache-2.0) at http://www.apache.org/licenses/LICENSE-2.0
  ##
@@ -32,8 +32,8 @@ from time import sleep
 
 
 GETID = [0xFF, 0x00, 0x00, 0x00] # get ID -> 0-31
-SETID = [0xE0, 0x01, 0x01, 0x01] # set ID=0(224%32)
-P7500 = [0x80, 0x3A, 0x4C] # move ID=0 P=7500(58*128+76)
+SETID = [0xEF, 0x01, 0x01, 0x01] # set ID=15(239%32)
+P7500 = [0x83, 0x3A, 0x4C] # move ID=3 P=7500(58*128+76)
 P3968 = [0x83, 0x1F, 0x00]
 
 
@@ -52,9 +52,9 @@ except Exception as errmsg:
 # print(list(GET_ID))
 
 s.flushOutput()
-print("TX : " + bytearray(P7500).hex().upper())
+print("TX : " + bytearray(GETID).hex().upper())
 
-for i in P7500:
+for i in GETID:
 	request = struct.pack("B", i)
 	s.write(request)
 
@@ -67,25 +67,28 @@ sleep(1)
 
 
 s.flushOutput()
+print("TX : " + bytearray(P3968).hex().upper())
 for i in P3968:
-	buff = struct.pack("B", i)
-	s.write(buff)
+	request = struct.pack("B", i)
+	s.write(request)
 
 s.flushInput()
-msg = s.read(2048)
-print(bytearray(msg).hex().upper())
+response = s.read(256)
+print("RX : " + bytearray(response).hex().upper())
 
 
 sleep(1)
 
 
 s.flushOutput()
+print("TX : " + bytearray(P7500).hex().upper())
 for i in P7500:
-	buff = struct.pack("B", i)
-	s.write(buff)
+	request = struct.pack("B", i)
+	s.write(request)
 
 s.flushInput()
-msg = s.read(2048)
-print(bytearray(msg).hex().upper())
+response = s.read(256)
+print("RX : " + bytearray(response).hex().upper())
+
 
 s.close()
