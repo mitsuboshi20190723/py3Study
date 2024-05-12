@@ -3,7 +3,7 @@
 
 
 ##
- #  2023.10.15
+ #  2024.5.12
  #  nctplc5555.py
  #  ver.1.0
  #  Kunihito Mitsuboshi
@@ -21,7 +21,7 @@ import socket
 file = sys.argv
 
 if len(file) == 1:
-	print("Prease input response data :")
+	print("Prease input response data : ", end="")
 	str = input()
 else:
 	f = open(file[1], "r")
