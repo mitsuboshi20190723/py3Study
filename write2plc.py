@@ -3,9 +3,9 @@
 
 
 ##
- #  2024.6.1
+ #  2024.6.2
  #  write2plc.py
- #  ver.1.0
+ #  ver.1.1
  #  Kunihito Mitsuboshi
  #  license(Apache-2.0) at http://www.apache.org/licenses/LICENSE-2.0
  ##
@@ -27,11 +27,11 @@ arg = sys.argv
 plc_type = 0 # if cording "plc_type = 0" then PLC type is MC-ascii
 for c in range(len(arg)):
 	if arg[c][0] == "-":
-		if   arg[1][1] == "a": # MC-ascii
+		if   arg[c][1] == "a": # MC-ascii
 			plc_type = 1
-		elif arg[1][1] == "b": # MC-binary
+		elif arg[c][1] == "b": # MC-binary
 			plc_type = 2
-		elif arg[1][1] == "h": # hostlink
+		elif arg[c][1] == "h": # hostlink
 			plc_type = 3
 	elif ":" in arg[c]:
 		IP = arg[c][:arg[c].find(":"):]
@@ -43,12 +43,12 @@ if plc_type == 0:
 
 
 
-word_data = [0xC, 0x0, 0x2, 0x64, 0x3C, 0x10, 0x1, 0x100]
-#             12,   0,   2,  100,   60,   16,   1,   256
+word_data = [0xF, 0x64, 0x400, 0x7FFF, 0xB4, 0x0, 0xFF, 0x100]
+#             15,  100,   1024, 32767,  180,   0,  255,   256
 
-bit_data = [0b1000011001100010, 0b1011011011101011]
-#                       0x8662,             0xB6EB
-#                             ,
+bit_data = [0b0101010101010101, 0b1010101010101010]
+#                       0x5555,             0xAAAA
+#                        21845,              43690
 
 
 # data for mitsubishi MC protocol
@@ -141,15 +141,14 @@ for n in range(len(req)):
 	# print("REQUEST DATA : " + req[i].hex().upper())
 	reqstr = req[n].hex().upper()
 	for i in range(int(len(reqstr)/32)+1):
-		print_line = "REQUEST DATA : " if i==0 else "               "
+		print_line = "REQUEST DATA : " if i==0 else " "*15
 		for j in range(16):
-			if len(reqstr) > (i*16+j)*2:
-				print_line += reqstr[(i*16+j)*2:(i*16+j)*2+2] + ("  " if j == 7 else " ")
+			k = i * 16 + j
+			if len(reqstr) > k*2:
+				print_line += reqstr[k*2:(k+1)*2] + ("  " if j == 7 else " ")
 		print(print_line)
 
-
 # exit(0)
-
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.connect((IP, PORT))
@@ -164,6 +163,5 @@ for n in range(len(req)):
 
 	if res == success:
 		print("Sended Data success")
-
 
 s.close()
