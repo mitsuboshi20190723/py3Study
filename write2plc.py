@@ -3,17 +3,17 @@
 
 
 ##
- #  2024.6.3
+ #  2024.6.8
  #  write2plc.py
- #  ver.1.2
+ #  ver.1.3
  #  Kunihito Mitsuboshi
  #  license(Apache-2.0) at http://www.apache.org/licenses/LICENSE-2.0
  ##
 
 
-# e.g. ./write2plc -a 192.168.1.163:5010
-# e.g. ./write2plc -b 192.168.1.163:5011
-# e.g. ./write2plc -h 192.168.1.163:8501
+# e.g.  ./write2plc.py -a 192.168.1.163:5010
+# e.g.  ./write2plc.py -b 192.168.1.163:5011
+# e.g.  ./write2plc.py -h 192.168.1.163:8501
 
 
 
@@ -45,9 +45,10 @@ if plc_type == 0:
 
 word_data = [15, 100, 1024, 32767, 180, 0, -180, -32768]
 
-bit_data = [0b0101010101010101, 0b1010101010101010]
-#                       0x5555,             0xAAAA
-#                        21845,              43690
+bit_data = [0b0011001101010101, 0b1100110010101010]
+#                       0x3355,             0xCCAA
+#                        13141,              52394
+
 
 
 # data for mitsubishi MC protocol
@@ -62,12 +63,13 @@ for i in range(len(bit_data)):
 # data for keyence host link
 wdata4hl = ""
 for i in range(len(word_data)):
-	wdata4hl += " " + str(word_data[i])
+	wdata4hl += " " + ("+" if word_data[i]>0 else "") + str(word_data[i])
 
 bdata4hl = ""
 for i in range(len(bit_data)):
-	bdata4hl += " " + str(bit_data[i])
-#	bdata4hl += " " + str(hex(bit_data[i]).hex().upper())
+	for j in range(16):
+		bdata4hl += " " + str(bit_data[i]%2)
+		bit_data[i] //= 2
 
 
 
@@ -125,15 +127,15 @@ elif plc_type == 2:
 elif plc_type == 3:
 
 	command = "WRS "
-	w_dev = "DW 9000.S " # DW9000 as signed dec
-	b_dev = "MR 9000.H " # MR9000 as unsigned hex
+	w_dev = "DM 9000.S " # DM9000 as signed dec
+	b_dev = "MR 9000 " # MR9000 as bit
 	w_num = str(len(word_data))
-	b_num = str(len(bit_data)) 
+	b_num = str(len(bit_data) * 16) 
 
-	msg1 = (command + w_dev + w_num + wdata4hl).encode() + b'\x0D'
-	msg2 = (command + b_dev + b_num + bdata4hl).encode() + b'\x0D'
+	msg1 = (command + w_dev + w_num + wdata4hl + "\r").encode()
+	msg2 = (command + b_dev + b_num + bdata4hl + "\r").encode()
 	req = [msg1, msg2]
-	success = ("").encode()
+	success = ("OK\r\n").encode() # b'\x4F\x4B\x0D\x0A'
 
 
 for n in range(len(req)):
