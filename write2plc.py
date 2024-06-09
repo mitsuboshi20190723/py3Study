@@ -3,9 +3,9 @@
 
 
 ##
- #  2024.6.8
+ #  2024.6.10
  #  write2plc.py
- #  ver.1.3
+ #  ver.1.4
  #  Kunihito Mitsuboshi
  #  license(Apache-2.0) at http://www.apache.org/licenses/LICENSE-2.0
  ##
@@ -43,12 +43,11 @@ if plc_type == 0:
 
 
 
-word_data = [15, 100, 1024, 32767, 180, 0, -180, -32768]
+word_data = [-32768,  -3894,   -3893,   -256,     -1,      0,    255,   3893,  32767]
+#            0x8000, 0xF0CA,  0xF0CB, 0xFF00, 0xFFFF, 0x0000, 0x00FF, 0x0F35, 0x7FFF
 
-bit_data = [0b0011001101010101, 0b1100110010101010]
-#                       0x3355,             0xCCAA
-#                        13141,              52394
-
+bit_data = [0b0000111100110101, 0b1111000011001010, 0b1111111111111111]
+#                       0x0F35,             0xF0CA,             0xFFFF
 
 
 # data for mitsubishi MC protocol
@@ -59,6 +58,7 @@ for i in range(len(word_data)):
 bdata4mc = b''
 for i in range(len(bit_data)):
 	bdata4mc += struct.pack('H', bit_data[i])
+
 
 # data for keyence host link
 wdata4hl = ""
@@ -75,16 +75,17 @@ for i in range(len(bit_data)):
 
 if   plc_type == 1:
 
-	length = 4 + 12 + 8 + 4 + 2*len(word_data) + 8 + 4 + 2*len(bit_data)
+	length = 4 + 12 + 8 + 4 + 2*len(word_data) + 8 + 4 + 2*len(bit_data)                 # 64
 	head1 = "500000FF03FF00"
-	head2 = format(length, "04X")
+	head2 = format(length, "04X")                                                        # "0040"
 	head3 = "0000"                                                      #  4 byte
 	command = "140600000101"                                            # 12 byte
 	w_dev = "W*000100" # W100                                           #  8 byte
-	w_num = format(len(word_data), "04X")                               #  4 byte
-
+	w_num = format(len(word_data), "04X")                               #  4 byte        # "0009"
+#	wdata4mc                                                            # 18 byte
 	b_dev = "B*000100" # B100                                           #  8 byte
-	b_num = format(len(bit_data), "04X")                                #  4 byte
+	b_num = format(len(bit_data), "04X")                                #  4 byte        # "0003"
+#	bdata4mc                                                            #  6 byte
 
 	msg = (head1 + head2 + head3 + command + w_dev + w_num).encode() + wdata4mc + (b_dev + b_num).encode() + bdata4mc
 	req = [msg]
@@ -92,16 +93,17 @@ if   plc_type == 1:
 
 elif plc_type == 4:
 
-	length = 4 + 12 + 8 + 4 + 2*len(word_data) + 8 + 4 + 2*len(bit_data)
+	length = 4 + 12 + 8 + 4 + 2*len(word_data) + 8 + 4 + 2*len(bit_data)                 # 64
 	head1 = b'\x35\x30\x30\x30\x30\x30\x46\x46\x30\x33\x46\x46\x30\x30'
-	head2 = format(length, "04X").encode()
+	head2 = format(length, "04X").encode()                                               # b'\x30\x30\x34\x30'
 	head3 = b'\x30\x30\x30\x30'                                         #  4 byte
-	command = b'\x31\x34\x30\x36\x30\x30\x30\x30\x30\x41\x30\x31'       # 12 byte
-	w_dev = b'\x57\x2A\x30\x30\x30\x41\x30\x30' # W100                  #  8 byte
-	w_num = format(len(word_data), "04X").encode()                      #  4 byte
-
-	b_dev = b'\x57\x2A\x30\x30\x30\x41\x30\x30' # B100                  #  8 byte
-	b_num = format(len(bit_data), "04X").encode()                       #  4 byte
+	command = b'\x31\x34\x30\x36\x30\x30\x30\x30\x30\x31\x30\x31'       # 12 byte
+	w_dev = b'\x57\x2A\x30\x30\x30\x31\x30\x30' # W100                  #  8 byte
+	w_num = format(len(word_data), "04X").encode()                      #  4 byte        # b'\x30\x30\x30\x39'
+#	wdata4mc                                                            # 18 byte
+	b_dev = b'\x42\x2A\x30\x30\x30\x31\x30\x30' # B100                  #  8 byte
+	b_num = format(len(bit_data), "04X").encode()                       #  4 byte        # b'\x30\x30\x30\x33'
+#	bdata4mc                                                            #  6 byte
 
 	msg = head1 + head2 + head3 + command + w_dev + w_num + wdata4mc + b_dev + b_num + bdata4mc
 	req = [msg]
@@ -109,16 +111,17 @@ elif plc_type == 4:
 
 elif plc_type == 2:
 
-	length = 2 + 6 + 4 + 2 + 2*len(word_data) + 4 + 2 + 2*len(bit_data)
+	length = 2 + 6 + 4 + 2 + 2*len(word_data) + 4 + 2 + 2*len(bit_data)                  # 44
 	head1 = b'\x50\x00\x00\xFF\xFF\x03\x00'
-	head2 = struct.pack('h', length)
+	head2 = struct.pack('h', length)                                                     # b'\x2C\x00'
 	head3 = b'\x00\x00'                                                 #  2 byte
 	command = b'\x06\x14\x00\x00\x01\x01'                               #  6 byte
 	w_dev = b'\x00\x01\x00\xB4' # W100                                  #  4 byte
-	w_num = struct.pack('h', len(word_data))                            #  2 byte  
-
+	w_num = struct.pack('h', len(word_data))                            #  2 byte        # b'\x09\x00'
+#	wdata4mc                                                            # 18 byte
 	b_dev = b'\x00\x01\x00\xA0' # B100                                  #  4 byte
-	b_num = struct.pack('h', len(bit_data))                             #  2 byte
+	b_num = struct.pack('h', len(bit_data))                             #  2 byte        # b'\x03\x00'
+#	bdata4mc                                                            #  6 byte
 
 	msg = head1 + head2 + head3 + command + w_dev + w_num + wdata4mc + b_dev + b_num + bdata4mc
 	req = [msg]
@@ -128,7 +131,7 @@ elif plc_type == 3:
 
 	command = "WRS "
 	w_dev = "DM 9000.S " # DM9000 as signed dec
-	b_dev = "MR 9000 " # MR9000 as bit
+	b_dev = "MR 9000 "   # MR9000 as bit
 	w_num = str(len(word_data))
 	b_num = str(len(bit_data) * 16) 
 
@@ -163,6 +166,6 @@ for n in range(len(req)):
 	print("RESPONSE DATA : " + res)
 
 	if res == success:
-		print("Sended Data success")
+		print("Sended data success")
 
 s.close()
