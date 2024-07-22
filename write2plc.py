@@ -3,9 +3,9 @@
 
 
 ##
- #  2024.6.14
+ #  2024.7.21
  #  write2plc.py
- #  ver.1.5
+ #  ver.1.6
  #  Kunihito Mitsuboshi
  #  license(Apache-2.0) at http://www.apache.org/licenses/LICENSE-2.0
  ##
@@ -25,6 +25,7 @@ import socket
 arg = sys.argv
 
 plc_type = 0
+IP = ""
 for c in range(len(arg)):
 	if arg[c][0] == "-":
 		if   arg[c][1] == "a": # MC-ascii
@@ -127,8 +128,8 @@ elif plc_type == 3:
 	command = "WRS "
 	w_dev = "DM8000.S " # DM8000 as signed dec
 	b_dev = "MR8000 "   # MR8000 as bit
-	w_num = str(len(word_data))
-	b_num = str(len(bit_data) * 16) 
+	w_num = str(len(word_data))                                                          # "9"
+	b_num = str(len(bit_data) * 16)                                                      # "48"
 
 	msg1 = (command + w_dev + w_num + wdata4hl + "\r").encode()
 	msg2 = (command + b_dev + b_num + bdata4hl + "\r").encode()
@@ -147,7 +148,9 @@ for n in range(len(req)):
 				print_line += reqstr[k*2:(k+1)*2] + ("  " if j == 7 else " ")
 		print(print_line)
 
-# exit(0)
+
+if len(IP) == 0: exit(0)
+
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.connect((IP, PORT))
