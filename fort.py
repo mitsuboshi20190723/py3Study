@@ -12,13 +12,17 @@
 
 
 
+import struct
+import datetime
 import time
 import threading
-import struct
 
 
 
-def torf(num, digit=16, mode=0): # e.g. torf(10, mode=0) = 10, torf(0b1010, 4, -1) = "1010", torf(0xA, 4, 2) = "FTFT"
+# e.g. fort(10, mode=0) = 10, fort(0b1010, 4, -1) = "1010", fort(0xA, 4, 2) = "FTFT"
+
+
+def fort(num, digit=16, mode=0):
 
 	if mode < -2 or mode == 0 or mode > 2: return num # number
 
@@ -61,14 +65,12 @@ class read_db(threading.Thread):
 
 	def heartbeat(self, mode=-1):
 
-		if mode < 0:
-			strsec = datetime.now().strftime('%S')
-			mode = int(strsec) # // 2
+		if mode < 0: mode = int(datetime.now().strftime('%S')) // 2
 
 		return mode
 
 
-	def torf(self, num, digit=16, mode=0): # e.g. torf(10, mode=0) = 10, torf(0b1010, 4, -1) = "1010", torf(0xA, 4, 2) = "FTFT"
+	def fort(self, num, digit=16, mode=0):
 
 		if mode < -2 or mode == 0 or mode > 2: return num # number
 
@@ -92,10 +94,8 @@ class read_db(threading.Thread):
 		try:
 			while True:
 				try:
-					b = torf(self.data_dict[i][0], mode=0)
-
-					c = self.torf(self.heartbeat(), mode=2)
-					d = self.heartbeat()
+					b = fort(self.data_dict[i][0], mode=0)
+					c = self.fort(self.heartbeat(), mode=2)
 
 					time.sleep(1.0)
 
