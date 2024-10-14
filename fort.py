@@ -3,7 +3,7 @@
 
 
 ##
- #  2024.10.14
+ #  2024.10.15
  #  fort.py (False OR True)
  #  ver.0.6
  #  Kunihito Mitsuboshi
@@ -25,10 +25,9 @@ class read(threading.Thread):
 	c = [["", ""], ["0", "1"], ["F", "T"]]
 
 
-	def __init__():
+	def __init__(self):
 
 		super().__init__()
-		self.hb = 0
 
 
 	def fort(self, num, digit=16, mode=0): # e.g. fort(10, mode=0) = 10, fort(0b1010, 4, 1) = "1010", fort(0xA, 4, -2) = "FTFT"
@@ -40,7 +39,7 @@ class read(threading.Thread):
 		else: order = reversed(order) # big endian
 
 		bits = ""
-		for i in order: bits += read_db.c[mode][(num // 2**i) % 2]
+		for i in order: bits += read.c[mode][(num // 2**i) % 2]
 
 		return bits # string
 
@@ -52,13 +51,14 @@ class read(threading.Thread):
 		try:
 			while True:
 				try:
-					b = self.fort(a, 32, 0)
+					b = self.fort(a, 16, -2)
 
-					time.sleep(1.0)
+					print("In read :", b)
+					time.sleep(5)
 
 				except:
-					print_exc("error")
-					time.sleep(1.0)
+					print("error in read")
+					time.sleep(60)
 
 		except KeyboardInterrupt:
 			exit(0)
@@ -68,14 +68,15 @@ class read(threading.Thread):
 
 class write(threading.Thread):
 
-	def __init__():
+	def __init__(self):
 
 		super().__init__()
+		self.hb = 0
 
 
 	def heartbeat(self, mode=-2):
 
-		if mode < 0: mode = int(datetime.now().strftime('%S')) % abs(mode)
+		if mode < 0: mode = int(datetime.datetime.now().strftime('%S')) % abs(mode)
 		else: self.hb += 1 if self.hb < mode else -mode
 
 		return mode
@@ -83,18 +84,19 @@ class write(threading.Thread):
 
 	def run(self):
 
-		a = 255 # "_32bits_"
+		a = 255 # "_16bits_"
 
 		try:
 			while True:
 				try:
-					a = self.fort(self.heartbeat(), mode=2)
+					a = self.heartbeat(-60)
 
-					time.sleep(1.0)
+					print("In write :", a)
+					time.sleep(5.5)
 
 				except:
-					print_exc("error")
-					time.sleep(1.0)
+					print("error in write")
+					time.sleep(55.5)
 
 		except KeyboardInterrupt:
 			exit(0)
@@ -107,11 +109,13 @@ class rorw: # Read OR Write
 	def __init__(self):
 
 		self.r = read()
+		self.w = write()
 
 
 	def start(self):
 
 		self.r.start()
+		self.w.start()
 
 
 
@@ -122,7 +126,4 @@ if __name__ == "__main__":
 	main.start()
 
 	exit(0)
-
-
-
 
