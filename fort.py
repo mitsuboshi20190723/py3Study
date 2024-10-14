@@ -20,23 +20,15 @@ import threading
 
 
 
-class read_db(threading.Thread):
+class read(threading.Thread):
 
 	c = [["", ""], ["0", "1"], ["F", "T"]]
 
 
-	def __init__(self, data_dict):
+	def __init__():
 
 		super().__init__()
 		self.hb = 0
-
-
-	def heartbeat(self, mode=-2):
-
-		if mode < 0: mode = int(datetime.now().strftime('%S')) % abs(mode)
-		else: self.hb += 1 if self.hb < mode else -mode
-
-		return mode
 
 
 	def fort(self, num, digit=16, mode=0): # e.g. fort(10, mode=0) = 10, fort(0b1010, 4, 1) = "1010", fort(0xA, 4, -2) = "FTFT"
@@ -48,9 +40,7 @@ class read_db(threading.Thread):
 		else: order = reversed(order) # big endian
 
 		bits = ""
-		for i in order:
-			n = (num // 2**i) % 2
-			bits += read_db.c[mode][n]
+		for i in order: bits += read_db.c[mode][(num // 2**i) % 2]
 
 		return bits # string
 
@@ -63,12 +53,47 @@ class read_db(threading.Thread):
 			while True:
 				try:
 					b = self.fort(a, 32, 0)
-					c = self.fort(self.heartbeat(), mode=2)
 
 					time.sleep(1.0)
 
 				except:
-					traceback.print_exc()
+					print_exc("error")
+					time.sleep(1.0)
+
+		except KeyboardInterrupt:
+			exit(0)
+
+
+
+
+class write(threading.Thread):
+
+	def __init__():
+
+		super().__init__()
+
+
+	def heartbeat(self, mode=-2):
+
+		if mode < 0: mode = int(datetime.now().strftime('%S')) % abs(mode)
+		else: self.hb += 1 if self.hb < mode else -mode
+
+		return mode
+
+
+	def run(self):
+
+		a = 255 # "_32bits_"
+
+		try:
+			while True:
+				try:
+					a = self.fort(self.heartbeat(), mode=2)
+
+					time.sleep(1.0)
+
+				except:
+					print_exc("error")
 					time.sleep(1.0)
 
 		except KeyboardInterrupt:
@@ -81,7 +106,7 @@ class rorw: # Read OR Write
 
 	def __init__(self):
 
-		self.r = read_db(self.data_dict)
+		self.r = read()
 
 
 	def start(self):
